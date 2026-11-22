@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query
 from psycopg import errors
 
-from app.config import get_settings
 from app.database import get_connection, init_db
 from app.models import (
     CheckResponse,
@@ -35,7 +34,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="DevOps Sentinel API",
     description="Containerized service monitoring platform",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
 )
 
@@ -44,7 +43,7 @@ app = FastAPI(
 def root():
     return {
         "application": "DevOps Sentinel",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "documentation": "/docs",
     }
 
@@ -64,7 +63,6 @@ def health():
 
     except Exception:
         logger.exception("Database health check failed")
-
         raise HTTPException(
             status_code=503,
             detail="Database unavailable",
@@ -92,7 +90,6 @@ def create_service(service: ServiceCreate):
                 created = cursor.fetchone()
 
         logger.info("Registered monitoring service")
-
         return created
 
     except errors.UniqueViolation:

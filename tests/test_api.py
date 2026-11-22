@@ -22,14 +22,9 @@ def test_create_service(client):
     )
 
     assert response.status_code == 201
+    assert response.json()["id"] == 1
     assert response.json()["enabled"] is True
 
-
-def test_get_missing_service(client):
-    response = client.get("/services/999")
-
-    assert response.status_code == 404
-    
 
 def test_list_services(client):
     client.post(
@@ -46,14 +41,27 @@ def test_list_services(client):
     assert len(response.json()) == 1
 
 
+def test_get_missing_service(client):
+    response = client.get("/services/999")
+
+    assert response.status_code == 404
+
+
 def test_duplicate_service(client):
     payload = {
         "name": "Example Website",
         "url": "https://example.com",
     }
 
-    first = client.post("/services", json=payload)
-    second = client.post("/services", json=payload)
+    first = client.post(
+        "/services",
+        json=payload,
+    )
+
+    second = client.post(
+        "/services",
+        json=payload,
+    )
 
     assert first.status_code == 201
     assert second.status_code == 409
@@ -63,7 +71,7 @@ def test_reject_unapproved_host(client):
     response = client.post(
         "/services",
         json={
-            "name": "Unapproved Service",
+            "name": "Unapproved",
             "url": "https://unapproved.invalid",
         },
     )
@@ -115,4 +123,4 @@ def test_delete_service(client):
         f"/services/{created['id']}"
     )
 
-    assert response.status_code == 404   
+    assert response.status_code == 404

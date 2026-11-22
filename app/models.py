@@ -8,6 +8,37 @@ from pydantic import (
     field_validator,
 )
 
+from app.config import get_settings
+
+
+def validate_monitor_url(value: str) -> str:
+    try:
+        parsed = urlsplit(value)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("Invalid monitoring URL") from exc
+
+    if parsed.scheme != "https":
+        raise ValueError("Only HTTPS URLs are supported")
+
+    if not hostname:
+        raise ValueError("Hostname is required")
+
+    if hostname.lower() not in get_settings().allowed_hosts:
+        raise ValueError("Hostname is not approved")
+
+    if parsed.username or parsed.password:
+        raise ValueError("URL credentials are not allowed")
+
+    if port not in (None, 443):
+        raise ValueError("Only HTTPS port 443 is supported")
+
+    if parsed.fragment:
+        raise ValueError("URL fragments are not supported")
+
+    return value
+
 
 class ServiceCreate(BaseModel):
     name: str = Field(min_length=2, max_length=100)
@@ -15,35 +46,8 @@ class ServiceCreate(BaseModel):
 
     @field_validator("url")
     @classmethod
-    def validate_url(cls, value: str) -> str:
-        from app.config import get_settings
-
-        try:
-            parsed = urlsplit(value)
-            hostname = parsed.hostname
-            port = parsed.port
-        except ValueError as exc:
-            raise ValueError("Invalid URL") from exc
-
-        if parsed.scheme != "https":
-            raise ValueError("Only HTTPS URLs are allowed")
-
-        if not hostname:
-            raise ValueError("URL must contain a hostname")
-
-        if hostname.lower() not in get_settings().allowed_hosts:
-            raise ValueError("Hostname is not on the approved allowlist")
-
-        if parsed.username or parsed.password:
-            raise ValueError("Credentials in URLs are not allowed")
-
-        if port not in (None, 443):
-            raise ValueError("Only the standard HTTPS port is allowed")
-
-        if parsed.fragment:
-            raise ValueError("URL fragments are not allowed")
-
-        return value
+    def check_url(cls, value: str) -> str:
+        return validate_monitor_url(value)
 
 
 class ServiceUpdate(BaseModel):

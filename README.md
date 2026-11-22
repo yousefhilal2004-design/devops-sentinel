@@ -37,7 +37,7 @@ Setup instructions will be added as the project develops.
 
 ------------------------------------------------------------------
 
-## Stage 02 — Monitoring REST API
+## Monitoring REST API
 
 Implemented a Python REST API using FastAPI and PostgreSQL.
 
@@ -60,3 +60,31 @@ Implemented a Python REST API using FastAPI and PostgreSQL.
 
    ```bash
    python -m pip install -r requirements-dev.txt
+
+   --------------------------------------------------------------------
+
+
+   ## Automated Monitoring Worker
+
+DevOps Sentinel includes a Python monitoring worker that
+runs independently from the FastAPI application.
+
+### Features
+
+- Periodic HTTPS health checks
+- HTTP status monitoring
+- Response-time measurement
+- Timeout and connection-error handling
+- PostgreSQL monitoring history
+- Structured JSON logs
+- Configurable monitoring intervals
+- Graceful shutdown
+- Disabled-service filtering
+- Automated unit and integration tests
+
+### Running the Worker
+
+Start PostgreSQL and configure `.env`.
+
+```bash
+python -m worker.main

@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,31 +16,44 @@ TEST_DATABASE_URL = os.environ.get(
 
 @pytest.fixture
 def client(monkeypatch):
-    # Prevent accidentally clearing the development database
-    if TEST_DATABASE_URL.rsplit("/", 1)[-1] != "sentinel_test":
+    parsed = urlsplit(TEST_DATABASE_URL)
+
+    if (
+        parsed.path != "/sentinel_test"
+        or parsed.hostname not in ("127.0.0.1", "localhost")
+        or parsed.port != 5433
+    ):
         raise RuntimeError(
-            "Tests must use the disposable sentinel_test database"
+            "Tests must use the local disposable "
+            "sentinel_test database on port 5433"
         )
 
-    monkeypatch.setenv("DATABASE_URL", TEST_DATABASE_URL)
-    monkeypatch.setenv("ALLOWED_MONITOR_HOSTS", "example.com")
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        TEST_DATABASE_URL,
+    )
+
+    monkeypatch.setenv(
+        "ALLOWED_MONITOR_HOSTS",
+        "example.com",
+    )
 
     get_settings.cache_clear()
 
     from app.main import app
     from app.database import get_connection
 
-    with TestClient(app) as test_client:
-        # Reset test data before each test
-        with get_connection() as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    TRUNCATE TABLE checks, services
-                    RESTART IDENTITY CASCADE
-                    """
-                )
+    try:
+        with TestClient(app) as test_client:
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        TRUNCATE TABLE checks, services
+                        RESTART IDENTITY CASCADE
+                        """
+                    )
 
-        yield test_client
-
-    get_settings.cache_clear()
+            yield test_client
+    finally:
+        get_settings.cache_clear()

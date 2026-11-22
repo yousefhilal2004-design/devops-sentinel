@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,18 @@ class Settings(BaseSettings):
     database_url: str
 
     allowed_monitor_hosts: str = "example.com"
+
+    monitor_interval_seconds: int = Field(
+        default=30,
+        ge=5,
+        le=3600,
+    )
+
+    monitor_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=30,
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
