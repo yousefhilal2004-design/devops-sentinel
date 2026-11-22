@@ -1,8 +1,6 @@
 import httpx
-import pytest
 
 from worker import main as worker
-
 
 TEST_SERVICE = {
     "id": 1,
@@ -193,9 +191,7 @@ def test_worker_saves_monitoring_result(
 
     worker.run_cycle()
 
-    response = client.get(
-        f"/services/{created['id']}/checks"
-    )
+    response = client.get(f"/services/{created['id']}/checks")
 
     assert response.status_code == 200
 

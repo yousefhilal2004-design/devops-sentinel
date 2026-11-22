@@ -33,9 +33,7 @@ class Settings(BaseSettings):
     @property
     def allowed_hosts(self) -> set[str]:
         return {
-            host.strip().lower()
-            for host in self.allowed_monitor_hosts.split(",")
-            if host.strip()
+            host.strip().lower() for host in self.allowed_monitor_hosts.split(",") if host.strip()
         }
 
 

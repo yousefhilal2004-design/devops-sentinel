@@ -4,7 +4,6 @@ import logging
 import signal
 import socket
 import time
-
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
@@ -13,7 +12,6 @@ import httpx
 from app.config import get_settings
 from app.database import get_connection
 from app.models import validate_monitor_url
-
 
 logger = logging.getLogger("sentinel.worker")
 
@@ -29,9 +27,7 @@ def configure_logging():
 
 def log_event(level, event, **fields):
     record = {
-        "timestamp": datetime.now(
-            timezone.utc
-        ).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "level": level.upper(),
         "event": event,
         **fields,
@@ -49,24 +45,16 @@ def resolve_public_addresses(hostname):
         type=socket.SOCK_STREAM,
     )
 
-    addresses = {
-        result[4][0]
-        for result in results
-    }
+    addresses = {result[4][0] for result in results}
 
     if not addresses:
-        raise ValueError(
-            "Hostname has no resolved addresses"
-        )
+        raise ValueError("Hostname has no resolved addresses")
 
     for address in addresses:
         ip = ipaddress.ip_address(address)
 
         if not ip.is_global:
-            raise ValueError(
-                "Monitoring target resolves "
-                "to a non-public IP address"
-            )
+            raise ValueError("Monitoring target resolves to a non-public IP address")
 
     return addresses
 
@@ -116,31 +104,22 @@ def check_service(service, client):
         if 200 <= status_code < 300:
             status = "up"
         else:
-            error_message = (
-                f"Unexpected HTTP status: {status_code}"
-            )
+            error_message = f"Unexpected HTTP status: {status_code}"
 
     except (
         httpx.RequestError,
         ValueError,
         OSError,
     ) as exc:
-        error_message = (
-            f"{type(exc).__name__}: "
-            f"{str(exc)[:300]}"
-        )
+        error_message = f"{type(exc).__name__}: {str(exc)[:300]}"
 
-    elapsed_ms = (
-        time.perf_counter() - start
-    ) * 1000
+    elapsed_ms = (time.perf_counter() - start) * 1000
 
     return {
         "service_id": service["id"],
         "status": status,
         "status_code": status_code,
-        "response_time_ms": round(
-            elapsed_ms, 2
-        ),
+        "response_time_ms": round(elapsed_ms, 2),
         "error_message": error_message,
     }
 
@@ -189,7 +168,6 @@ def run_cycle():
         trust_env=False,
         verify=True,
     ) as client:
-
         for service in services:
             try:
                 result = check_service(
@@ -206,9 +184,7 @@ def run_cycle():
                     service_id=service["id"],
                     status=result["status"],
                     status_code=result["status_code"],
-                    response_time_ms=result[
-                        "response_time_ms"
-                    ],
+                    response_time_ms=result["response_time_ms"],
                 )
 
             except Exception:
@@ -254,12 +230,8 @@ def main():
     log_event(
         "info",
         "worker_started",
-        interval_seconds=(
-            settings.monitor_interval_seconds
-        ),
-        timeout_seconds=(
-            settings.monitor_timeout_seconds
-        ),
+        interval_seconds=(settings.monitor_interval_seconds),
+        timeout_seconds=(settings.monitor_timeout_seconds),
     )
 
     while not stop_requested:
@@ -267,13 +239,9 @@ def main():
             run_cycle()
 
         except Exception:
-            logger.exception(
-                "Monitoring cycle failed"
-            )
+            logger.exception("Monitoring cycle failed")
 
-        for _ in range(
-            settings.monitor_interval_seconds
-        ):
+        for _ in range(settings.monitor_interval_seconds):
             if stop_requested:
                 break
 

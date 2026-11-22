@@ -113,14 +113,10 @@ def test_delete_service(client):
         },
     ).json()
 
-    response = client.delete(
-        f"/services/{created['id']}"
-    )
+    response = client.delete(f"/services/{created['id']}")
 
     assert response.status_code == 204
 
-    response = client.get(
-        f"/services/{created['id']}"
-    )
+    response = client.get(f"/services/{created['id']}")
 
     assert response.status_code == 404

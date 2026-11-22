@@ -12,7 +12,6 @@ from app.models import (
     ServiceUpdate,
 )
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",

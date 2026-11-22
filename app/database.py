@@ -6,7 +6,6 @@ from psycopg.rows import dict_row
 
 from app.config import get_settings
 
-
 logger = logging.getLogger(__name__)
 
 
