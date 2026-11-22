@@ -1,7 +1,8 @@
+
 # syntax=docker/dockerfile:1
 
 # ======================================
-# Stage 1 — Dependencies
+# Stage 1 - Dependencies
 # ======================================
 
 FROM python:3.14-slim AS builder
@@ -11,19 +12,26 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /build
 
+# Update OS packages and Python packaging tools
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create Python virtual environment
 RUN python -m venv /opt/venv
 
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements.txt .
 
-RUN python -m pip install \
-    --no-cache-dir \
-    -r requirements.txt
-
+# Update packaging tools and install dependencies
+RUN python -m pip install --no-cache-dir \
+        --upgrade pip setuptools wheel \
+    && python -m pip install --no-cache-dir \
+        -r requirements.txt
 
 # ======================================
-# Stage 2 — Runtime
+# Stage 2 - Runtime
 # ======================================
 
 FROM python:3.14-slim AS runtime
@@ -34,14 +42,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd --system sentinel && \
-    useradd --system \
-    --gid sentinel \
-    --home-dir /app \
-    sentinel
+# Apply available Debian security updates
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies
+# Create non-root user
+RUN groupadd --system sentinel \
+    && useradd --system \
+        --gid sentinel \
+        --home-dir /app \
+        sentinel
+
+# Copy updated Python dependencies
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application files
