@@ -156,6 +156,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # ==========================================
+      # BUILD DOCKER IMAGE
+      # ==========================================
+
       - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
@@ -218,10 +222,15 @@ jobs:
 
       - name: Inspect Docker image metadata
         run: |
-          echo "=== Image metadata ==="
+          echo "=== Image ID ==="
 
           docker image inspect devops-sentinel:ci \
-            --format 'ID={{.Id}} Labels={{json .Config.Labels}}'
+            --format '{{.Id}}'
+
+          echo "=== Image configuration ==="
+
+          docker image inspect devops-sentinel:ci \
+            --format '{{json .Config}}'
 
           echo "=== Python packages in image filesystem ==="
 
