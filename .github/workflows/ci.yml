@@ -20,7 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   # ==========================================
   # JOB 1 - CODE QUALITY AND DOCKER COMPOSE
   # ==========================================
@@ -189,12 +188,28 @@ jobs:
             devops-sentinel:ci \
             -c "import fastapi, httpx, psycopg; import app.main; import worker.main; print('Application imports successful')"
 
+      # ==========================================
+      # FIXED PYTHON PACKAGE INSPECTION
+      # ==========================================
+
       - name: Inspect Python package metadata
         run: |
           docker run --rm \
             --entrypoint python \
             devops-sentinel:ci \
-            -c "from importlib.metadata import version, PackageNotFoundError; packages=['msgpack','setuptools','urllib3']; [(print(p + ': ' + version(p)) if p else None) for p in packages if p]"
+            -c '
+          from importlib.metadata import version, PackageNotFoundError
+
+          for package in ["msgpack", "setuptools", "urllib3"]:
+              try:
+                  print(f"{package}: {version(package)}")
+              except PackageNotFoundError:
+                  print(f"{package}: not installed")
+          '
+
+      # ==========================================
+      # TRIVY SECURITY SCAN
+      # ==========================================
 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
