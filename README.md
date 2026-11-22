@@ -88,3 +88,71 @@ Start PostgreSQL and configure `.env`.
 
 ```bash
 python -m worker.main
+
+----------------------------------------------------------------------
+
+## Docker Containerization
+
+DevOps Sentinel uses a multi-stage Dockerfile to build
+a reusable Python runtime image.
+
+### Features
+
+- Multi-stage Docker build
+- Python virtual environment
+- Non-root runtime user
+- Separate API and monitoring worker containers
+- Docker bridge networking
+- Environment-based configuration
+- API container health checks
+- Persistent PostgreSQL storage
+- Container logs and troubleshooting
+
+### Build
+
+```bash
+docker build -t devops-sentinel:stage04 .
+
+-----------------------------------------------------------------------
+
+## Docker Networking
+
+DevOps Sentinel uses two user-defined Docker bridge networks.
+
+### Network Architecture
+
+- `sentinel-frontend`: API container
+- `sentinel-backend`: API, worker, and PostgreSQL containers
+
+The API is attached to both networks.
+The worker and PostgreSQL are attached only to the backend network.
+
+### Features
+
+- User-defined Docker bridge networks
+- Container-name DNS resolution
+- Internal container-to-container communication
+- Host port publishing for FastAPI
+- Separation of application and database network traffic
+- Docker networking troubleshooting
+
+### Verification
+
+```bash
+docker network ls
+docker network inspect sentinel-frontend
+docker network inspect sentinel-backend
+docker port sentinel-api
+curl http://127.0.0.1:8000/health
+```
+
+### Security Notes
+
+Network separation reduces unnecessary direct connectivity,
+but it does not replace authentication or firewall controls.
+
+The backend network is not marked `internal` because the
+monitoring worker requires outbound HTTPS access.
+
+PostgreSQL's development host port remains published until
+the database container is recreated with different settings.
