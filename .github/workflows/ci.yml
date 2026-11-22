@@ -21,6 +21,10 @@ concurrency:
 
 jobs:
 
+  # ==========================================
+  # JOB 1 - CODE QUALITY AND DOCKER COMPOSE
+  # ==========================================
+
   quality:
     name: Code Quality and Compose
     runs-on: ubuntu-latest
@@ -36,13 +40,21 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - name: Install dependencies
+      - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip
+
+      - name: Install project dependencies
+        run: |
           python -m pip install -r requirements-dev.txt
+
+      - name: Install Ruff explicitly
+        run: |
+          python -m pip install "ruff>=0.9,<1.0"
 
       - name: Verify Ruff installation
         run: |
+          python -m pip show ruff
           python -m ruff --version
 
       - name: Check Python syntax
@@ -57,13 +69,17 @@ jobs:
         run: |
           python -m ruff format --check app worker tests
 
-      - name: Prepare Compose environment
+      - name: Prepare Docker Compose environment
         run: |
           cp .env.compose.example .env.compose
 
       - name: Validate Docker Compose
         run: |
           docker compose --env-file .env.compose config --quiet
+
+  # ==========================================
+  # JOB 2 - PYTHON TESTS WITH POSTGRESQL
+  # ==========================================
 
   tests:
     name: Python Tests
@@ -105,18 +121,25 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-dev.txt
 
-      - name: Install dependencies
+      - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip
+
+      - name: Install project dependencies
+        run: |
           python -m pip install -r requirements-dev.txt
 
       - name: Verify PostgreSQL connection
         run: |
           python -c "import os, psycopg; conn = psycopg.connect(os.environ['DATABASE_URL']); print('PostgreSQL connected successfully'); conn.close()"
 
-      - name: Run tests
+      - name: Run Python tests
         run: |
           python -m pytest -v
+
+  # ==========================================
+  # JOB 3 - DOCKER BUILD AND SECURITY
+  # ==========================================
 
   docker-security:
     name: Docker Build and Security
@@ -133,7 +156,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build application image
+      - name: Build Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -142,18 +165,25 @@ jobs:
           load: true
           tags: devops-sentinel:ci
 
-      - name: Inspect image user
+      - name: Verify non-root user
         run: |
           USER_NAME="$(docker image inspect devops-sentinel:ci --format '{{.Config.User}}')"
-          echo "Configured image user: $USER_NAME"
+          echo "Docker image user: $USER_NAME"
           test "$USER_NAME" = "sentinel"
 
-      - name: Verify Python in image
+      - name: Verify Python installation
         run: |
           docker run --rm \
             --entrypoint python \
             devops-sentinel:ci \
             --version
+
+      - name: Verify application imports
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            devops-sentinel:ci \
+            -c "import fastapi, httpx, psycopg; import app.main; import worker.main; print('Application imports successful')"
 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@0.33.1
