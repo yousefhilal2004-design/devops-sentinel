@@ -156,3 +156,70 @@ monitoring worker requires outbound HTTPS access.
 
 PostgreSQL's development host port remains published until
 the database container is recreated with different settings.
+
+
+-----------------------------------------------------------------------
+
+## PostgreSQL Persistence, Backups & Recovery
+
+In this stage, I improved the database reliability of DevOps Sentinel.
+
+### What I implemented
+
+- Inspected PostgreSQL storage and Docker volume mounts
+- Verified database persistence after container restart
+- Created a Bash script for PostgreSQL backups
+- Used `pg_dump` to create custom-format backup archives
+- Added backup validation and logging
+- Generated SHA-256 checksums
+- Restored a backup into a separate test database
+- Verified restored tables and monitoring records
+- Inspected PostgreSQL indexes and query execution plans
+- Created a database health-check script
+- Configured a daily cron backup job
+
+### Backup
+
+Run:
+
+```bash
+./scripts/backup_postgres.sh
+```
+
+Backups are saved in `backups/postgres/`.
+
+### Database health
+
+Run:
+
+```bash
+./scripts/check_postgres.sh
+```
+
+### Recovery
+
+A backup can be restored into a separate empty database using:
+
+```bash
+docker exec -i sentinel-postgres-dev \
+  pg_restore \
+  -U sentinel \
+  -d sentinel_restore_test \
+  --no-owner \
+  --no-acl \
+  --exit-on-error \
+  < backups/postgres/BACKUP_FILE.dump
+```
+
+Replace `BACKUP_FILE.dump` with the actual filename.
+
+### Security
+
+Database credentials, backups, and runtime logs are excluded from Git.
+
+Backups should be stored securely and tested regularly.
+
+### Skills Practiced
+
+PostgreSQL, Docker persistence, Bash scripting, backup automation,
+database recovery, SQL queries, indexes, monitoring, and cron.

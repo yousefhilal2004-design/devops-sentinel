@@ -1,31 +1,24 @@
 # Python
 .venv/
 __pycache__/
-*.py[cod]
+*.pyc
 .pytest_cache/
-.coverage
-htmlcov/
 
-# Environment and secrets
+# Secrets
 .env
 .env.*
 !.env.example
-secrets/
 
-# Local databases and data
-*.db
-*.sqlite3
-data/
+# Database backups
 backups/
+*.dump
+*.sql
+*.backup
+*.sha256
 
-# Logs
-*.log
+# Runtime logs
 logs/
+*.log
 
-# Editors
-.vscode/
-.idea/
-
-# OS files
+# Local files
 .DS_Store
-Thumbs.db
