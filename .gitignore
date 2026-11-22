@@ -1,24 +1,19 @@
-# Python
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-
-# Secrets
+# Environment
 .env
 .env.*
 !.env.example
+!.env.compose.example
 
-# Database backups
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Backups and logs
 backups/
-*.dump
-*.sql
-*.backup
-*.sha256
-
-# Runtime logs
 logs/
-*.log
-
-# Local files
-.DS_Store
+*.dump
+*.backup
+*.sql
+*.sha256

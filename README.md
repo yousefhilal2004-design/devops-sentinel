@@ -223,3 +223,97 @@ Backups should be stored securely and tested regularly.
 
 PostgreSQL, Docker persistence, Bash scripting, backup automation,
 database recovery, SQL queries, indexes, monitoring, and cron.
+
+
+-----------------------------------------------------------------------
+
+
+## Docker Compose
+
+DevOps Sentinel now uses Docker Compose to manage its
+multi-container application.
+
+### Services
+
+- **api** — FastAPI REST API
+- **worker** — Automated HTTP monitoring
+- **db** — PostgreSQL 17 database
+
+### Networking
+
+Two user-defined Docker bridge networks:
+
+- `frontend`: API
+- `backend`: API, worker, PostgreSQL
+
+PostgreSQL is not published to the host.
+
+### Persistence
+
+PostgreSQL uses a named Docker volume:
+
+`devops-sentinel_postgres_data`
+
+### Start the Application
+
+1. Copy `.env.compose.example` to `.env.compose`.
+2. Configure the local development credentials.
+3. Build and start:
+
+```bash
+docker compose --env-file .env.compose up -d --build
+```
+
+### Check Services
+
+```bash
+docker compose --env-file .env.compose ps
+docker compose --env-file .env.compose logs -f
+```
+
+### Stop Services
+
+```bash
+docker compose --env-file .env.compose stop
+```
+
+### Start Existing Services
+
+```bash
+docker compose --env-file .env.compose start
+```
+
+### Remove Compose Containers
+
+```bash
+docker compose --env-file .env.compose down
+```
+
+This command preserves the named PostgreSQL volume
+unless volume removal is explicitly requested.
+
+### PostgreSQL Backup
+
+```bash
+./scripts/backup_compose.sh
+```
+
+Backups are saved in `backups/postgres/`.
+
+### Health Check
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+### Security Notes
+
+- The API binds to localhost.
+- PostgreSQL is not published to the host.
+- Database credentials are excluded from Git.
+- Backup files are excluded from Git.
+- Containers use a non-root application user.
+- Docker Compose manages service startup dependencies.
+
+This is a local development configuration,
+not a production deployment.
