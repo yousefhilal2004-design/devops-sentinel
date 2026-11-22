@@ -165,6 +165,10 @@ jobs:
           load: true
           tags: devops-sentinel:ci
 
+          # Temporary diagnostic settings
+          sbom: false
+          provenance: false
+
       - name: Verify non-root user
         run: |
           USER_NAME="$(docker image inspect devops-sentinel:ci --format '{{.Config.User}}')"
@@ -184,6 +188,13 @@ jobs:
             --entrypoint python \
             devops-sentinel:ci \
             -c "import fastapi, httpx, psycopg; import app.main; import worker.main; print('Application imports successful')"
+
+      - name: Inspect Python package metadata
+        run: |
+          docker run --rm \
+            --entrypoint python \
+            devops-sentinel:ci \
+            -c "from importlib.metadata import version, PackageNotFoundError; packages=['msgpack','setuptools','urllib3']; [(print(p + ': ' + version(p)) if p else None) for p in packages if p]"
 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@v0.36.0
