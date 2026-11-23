@@ -3,6 +3,10 @@ name: devops-sentinel
 
 services:
 
+  # ==========================================
+  # POSTGRESQL DATABASE
+  # ==========================================
+
   db:
     image: postgres:17
     restart: unless-stopped
@@ -27,12 +31,16 @@ services:
       retries: 5
       start_period: 10s
 
+  # ==========================================
+  # FASTAPI APPLICATION
+  # ==========================================
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
 
-    image: devops-sentinel:stage07
+    image: devops-sentinel:stage09
     restart: unless-stopped
 
     env_file:
@@ -63,8 +71,12 @@ services:
       retries: 3
       start_period: 20s
 
+  # ==========================================
+  # BACKGROUND WORKER
+  # ==========================================
+
   worker:
-    image: devops-sentinel:stage07
+    image: devops-sentinel:stage09
     restart: unless-stopped
 
     command:
@@ -87,6 +99,65 @@ services:
       api:
         condition: service_healthy
 
+  # ==========================================
+  # PROMETHEUS
+  # ==========================================
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+    ports:
+      - "127.0.0.1:9090:9090"
+
+    networks:
+      - frontend
+
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # ==========================================
+  # GRAFANA
+  # ==========================================
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    restart: unless-stopped
+
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost:3000
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    networks:
+      - frontend
+
+    depends_on:
+      - prometheus
+
+# ==========================================
+# NETWORKS
+# ==========================================
+
 networks:
   frontend:
     driver: bridge
@@ -94,5 +165,11 @@ networks:
   backend:
     driver: bridge
 
+# ==========================================
+# VOLUMES
+# ==========================================
+
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:

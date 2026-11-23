@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Query
 from psycopg import errors
 
 from app.database import get_connection, init_db
+from app.metrics import MetricsMiddleware, metrics_app
 from app.models import (
     CheckResponse,
     ServiceCreate,
@@ -12,12 +13,21 @@ from app.models import (
     ServiceUpdate,
 )
 
+# ==========================================
+# LOGGING CONFIGURATION
+# ==========================================
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ==========================================
+# APPLICATION LIFESPAN
+# ==========================================
 
 
 @asynccontextmanager
@@ -30,21 +40,43 @@ async def lifespan(app: FastAPI):
     logger.info("DevOps Sentinel API stopped")
 
 
+# ==========================================
+# FASTAPI APPLICATION
+# ==========================================
+
 app = FastAPI(
     title="DevOps Sentinel API",
     description="Containerized service monitoring platform",
-    version="0.3.0",
+    version="0.4.0",
     lifespan=lifespan,
 )
+
+# ==========================================
+# STAGE 09 - PROMETHEUS METRICS
+# ==========================================
+
+app.add_middleware(MetricsMiddleware)
+app.mount("/metrics", metrics_app)
+
+
+# ==========================================
+# ROOT ENDPOINT
+# ==========================================
 
 
 @app.get("/")
 def root():
     return {
         "application": "DevOps Sentinel",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "documentation": "/docs",
+        "metrics": "/metrics",
     }
+
+
+# ==========================================
+# HEALTH CHECK
+# ==========================================
 
 
 @app.get("/health")
@@ -65,7 +97,12 @@ def health():
         raise HTTPException(
             status_code=503,
             detail="Database unavailable",
-        )
+        ) from None
+
+
+# ==========================================
+# CREATE MONITORING SERVICE
+# ==========================================
 
 
 @app.post(
@@ -95,7 +132,12 @@ def create_service(service: ServiceCreate):
         raise HTTPException(
             status_code=409,
             detail="Service URL already registered",
-        )
+        ) from None
+
+
+# ==========================================
+# LIST ALL MONITORING SERVICES
+# ==========================================
 
 
 @app.get(
@@ -114,6 +156,11 @@ def list_services():
             )
 
             return cursor.fetchall()
+
+
+# ==========================================
+# GET SERVICE BY ID
+# ==========================================
 
 
 @app.get(
@@ -141,6 +188,11 @@ def get_service(service_id: int):
         )
 
     return service
+
+
+# ==========================================
+# UPDATE MONITORING SERVICE
+# ==========================================
 
 
 @app.patch(
@@ -174,6 +226,11 @@ def update_service(
     return service
 
 
+# ==========================================
+# DELETE MONITORING SERVICE
+# ==========================================
+
+
 @app.delete(
     "/services/{service_id}",
     status_code=204,
@@ -199,6 +256,11 @@ def delete_service(service_id: int):
         )
 
 
+# ==========================================
+# LIST RECENT MONITORING CHECKS
+# ==========================================
+
+
 @app.get(
     "/checks",
     response_model=list[CheckResponse],
@@ -219,6 +281,11 @@ def list_checks(
             )
 
             return cursor.fetchall()
+
+
+# ==========================================
+# GET CHECKS FOR A SPECIFIC SERVICE
+# ==========================================
 
 
 @app.get(
