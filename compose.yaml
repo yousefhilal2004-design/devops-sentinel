@@ -50,7 +50,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:?Set POSTGRES_USER}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:?Set POSTGRES_DB}
 
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:8001:8000"
 
     networks:
       - frontend
@@ -117,7 +117,7 @@ services:
       - prometheus_data:/prometheus
 
     ports:
-      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9091:9090"
 
     networks:
       - frontend
@@ -146,7 +146,7 @@ services:
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
 
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
 
     networks:
       - frontend

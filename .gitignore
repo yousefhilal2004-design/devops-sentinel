@@ -17,3 +17,33 @@ logs/
 *.backup
 *.sql
 *.sha256
+# Environment secrets
+.env
+.env.*
+!.env.example
+!.env.compose.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+
+# Database backups
+*.dump
+*.backup
+backups/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Editor files
+.vscode/
+.idea/
